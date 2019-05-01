@@ -1,0 +1,375 @@
+<!doctype html>
+<html>
+	<head>
+		<link rel="stylesheet" href="style.css" />
+  		<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    	<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  		<script src="dateFormat.js"></script> 		
+ 		<script src="buildPassword.js"></script>
+ 		<script src="confirmPassword.js"></script>
+ 		<script src="confirmationSection.js"></script>
+		<script>
+
+			var Passwords = {};
+			var uChoice = {drop1:'0', drag1:'0', drop2:'0', drag2: '0', drop3: '0', drag3: '0'};
+			var text ='';
+			var person;
+
+			/*
+				function : DragNDrop
+				purpose  : Sets the pieces as "draggable" and tiles in board
+						   as "droppable". Ensures pieces are not dropped 
+						   outside of the board and only tiles can accept
+						   a piece
+			*/		
+			function DragNDrop(){
+    			$(".drag" ).draggable({
+			        cancel: "a.ui-icon",
+			        revert: true,
+			        helper: "clone",
+			        cursor: "move",
+			        revertDuration:0,
+    			});
+
+    			$(".ctile").droppable({
+    				accept: '.drag',
+    				drop: handleDropEvent,
+    			});
+			}
+
+			/*
+				function : STARTUP FUNCTION
+				purpose  : Displays boards, pieces and prompts for username
+			*/			
+  			$(function() {
+
+	            $( "#dialog" ).dialog({
+	               autoOpen: false,
+ 				   buttons: { OK: function() {$(this).dialog("close");}},
+	            });
+
+  				$('#passwordType').html('Student Account Login');
+  				addSection();
+  			  	DragNDrop();
+  				Passwords.pass1 = build();
+  				person = prompt("Please enter your name", "User");
+   				LogRow('Student Account Login','create','start'); 				
+  				$("#downloadbtn").hide();
+  				$('#attpt').hide();
+  			  	$('#newbtn').hide();	
+
+			});
+
+
+			/*
+				function : download
+				purpose  : enables user to download log file 
+			*/
+			function download(filename, text) {
+			    var element = document.createElement('a');
+			    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+			    element.setAttribute('download', filename);
+			    element.style.display = 'none';
+			    document.body.appendChild(element);
+			    element.click();
+			    document.body.removeChild(element);
+			}
+
+
+			/*
+				function : dwnLog
+				purpose  : creates filename and adds downloading
+						   capability 
+			*/
+			function dwnLog(){
+			    var filename = "Log.csv";			    
+			    download(filename, text);
+			}
+
+
+			/*
+				function : handleDropEvent
+				purpose  : Ensures only 3 pieces can be dropped on the board
+			*/
+			function handleDropEvent(event, ui){
+				var currentCount = $("#dropCounter").html();
+				if(currentCount < 3){
+					dragged = ui.draggable;
+					droppedOn= $(this);
+
+            		var item = dragged.clone();
+            		droppedOn.addClass('has-drop').html(item);
+
+					if(currentCount == 0){
+						uChoice.drop1 = droppedOn.attr('id');
+						uChoice.drag1 = dragged.attr('id');
+					}
+					if(currentCount == 1){
+						uChoice.drop2 = droppedOn.attr('id');
+						uChoice.drag2 = dragged.attr('id');
+					}
+					if(currentCount == 2){
+						uChoice.drop3 = droppedOn.attr('id');
+						uChoice.drag3 = dragged.attr('id');
+					}
+
+				    droppedOn.droppable("disable");
+
+				    currentCount++;
+				    $("#dropCounter").html(currentCount);
+
+				}
+			}
+
+
+			/*
+				function : ResetTable
+				purpose  : removes all pieces user dragged on board.
+						   Removes and add board back. 
+			*/
+			function ResetTable(){
+				$("#dropCounter").html(0);
+				$( "#sec" ).remove();
+  				addSection();
+				DragNDrop();
+			}
+
+
+			/*
+				function : LogRow
+				purpose  : Creates log file row 
+			*/
+			function LogRow(passType,action,result){
+				text = text + getTime() +',' + person + ',' + passType +',Chess21, ,'+ action + ',' + result + '\r\n';
+			}
+
+
+			/*
+				function : End
+				purpose  : Clears all hidden fields and displays button to save the log
+						   file or test new passwords 
+			*/
+			function End(){
+				$('#passAttempt').html(0); 
+				$("#downloadbtn").show();  
+				$("#newbtn").show();
+				$("#confirmPass").hide();
+				$("#clearbutton").hide();
+				$("#confirmbutton").hide();
+				$("#piecesBox").hide();
+				$("#passwordType").hide();
+  				$('#attpt').hide();
+			}
+
+
+			/*
+				function : newPasswords
+				purpose  : refreshes page
+			*/
+			function newPasswords(){
+				location.reload();
+			}
+
+
+			/*
+				function : confirmUserChoice 
+				purpose  : confirms if user entered password correctly or not 
+			*/
+			function confirmUserChoice(){
+				var attempt = $('#passAttempt').html();
+				var passed;
+				var password;
+				var passType = $('#passwordType').html();
+				var passNum = $('#passwordNum').html() 
+				var test = $('#testing').html(); // 0 - confirmation phase, 1 - login phase 
+
+				if (passNum == 1){
+					password = Passwords.pass1;
+					passed = confirmPass(password,uChoice);
+				}else if (passNum == 2){
+					password = Passwords.pass2;
+					passed = confirmPass(password,uChoice);
+				}else if (passNum == 3){
+					password = Passwords.pass3;
+					passed = confirmPass(password,uChoice);					
+				}else{} // should never happen 		
+
+				if(passed && (passNum < 3)){
+					if(test == 1){					
+						LogRow(passType,'login','success');
+						$('#passAttempt').html(0);
+						attempt=0;										
+					}
+					nextPass();
+				}
+				if(!passed && (passNum < 3)){
+					$( "#dialog" ).dialog( "open" );
+        			ResetTable();
+					if(test == 1){ //login phase 						
+						attempt++;
+						$('#passAttempt').html(attempt);
+						if(attempt == 3){
+					 		LogRow(passType,'login','failure');
+					 		$('#passAttempt').html(0);
+					 		attempt=0;		
+					 		nextPass();			 		
+						}
+					}					
+				}
+				if(passed && (test == 0) && (passNum == 3)){
+					$('#passAttempt').html(0);
+					attempt=0;						
+   					ResetTable();
+					TestUser();
+				}
+				if(passed && (test == 1) && (passNum == 3)){
+					LogRow(passType,'login','success');
+					End();     						
+				}	
+				if(!passed && (passNum == 3)){
+					$( "#dialog" ).dialog( "open" );
+        			ResetTable();					
+					if(test == 1){ //login phase
+						attempt++;
+						$('#passAttempt').html(attempt);
+						if(attempt == 3){
+					 		LogRow(passType,'login','failure');
+					 		End();   							
+						}
+					}			
+				}
+			}
+
+			/*
+				function : nextPass
+				purpose  : displays next password 
+			*/
+			function nextPass(){
+				var test = $('#testing').html() // 1 - login phase, 0 - confirmation phase
+				$("#dropCounter").html(0);
+				var nPass = parseInt($('#passwordNum').html()) + 1;
+				var passType = Array('Student Account Login', 'FootLocker Login', 'Outlook Login');
+				$('#passwordNum').html(nPass);
+				$('.imgs').remove();
+				$( "#sec" ).remove();
+  				addSection();
+				DragNDrop();
+
+				if ($('#passwordNum').html() == 2 && test == 0){
+  					Passwords.pass2 = build(); 
+					$('#passwordType').html(passType[1]);
+					$("#passwordType").css("color", "yellow");
+					LogRow(passType[1],'create','start');
+				}
+				if($('#passwordNum').html() == 2 && test == 1){
+					$('#passwordType').html(passType[1]);
+					$("#passwordType").css("color", "yellow");
+					LogRow(passType[1],'enter','start');
+				}
+				if($('#passwordNum').html() == 3 && test == 1){
+					$('#passwordType').html(passType[2]);
+					$("#passwordType").css("color", "springgreen");
+					LogRow(passType[2],'enter','start');					
+
+				}
+				if($('#passwordNum').html() == 3 && test == 0){
+  					Passwords.pass3 = build();
+					$('#passwordType').html(passType[2]);
+					$("#passwordType").css("color", "springgreen");
+					LogRow(passType[2],'create','start');
+				}
+			}
+
+			/*
+				function : getTime
+				purpose  : gets the current date and time 
+				return   : current date and time
+			*/
+			function getTime(){
+				var now = new Date();
+				date = dateFormat(now, "yyyy-mm-dd");
+				time = dateFormat(now, "HH:MM:ss");
+				current =  date + " " + time;	
+				return current;
+			}
+
+
+			/*
+				function : TestUser
+				purpose  : Hides board with correct password. 
+						   Prompts user to enter the 3 different passwords given 
+			*/
+			function TestUser(){
+				$("#testing").html(1);
+				$('#passwordNum').html(1);
+				$('#passwordType').html('Student Account Login');
+				$("#passwordType").css("color", "palevioletred");
+				$("#showPass").hide();
+				$('#attpt').show();
+				LogRow('Student Account Login','enter','start');
+			}
+
+		</script>
+	</head>
+	<body>
+		<div class="titlebar" style="background-color:black">
+			<div><h2 style="font-family:Arial Narrow; color:lightsalmon">C H E S S 2 1</h2></div>
+			<div><h2 id="passwordType" style='color:palevioletred;'></h2></div>
+			<div id='attpt' style="color:red">
+				<h2>Attempt: # </h2>
+				<h2 id="passAttempt" >0</h2>
+			</div>		
+		</div>
+		<hr>
+		<!--Hidden tags-->
+		<p id="testing" hidden="true">0</p>
+		<p id="passwordNum" hidden="true">1</p>
+		<p id="dropCounter" hidden="true">0</p>
+		<p id="time" hidden="true"></p>
+ 
+		<div id="dialog" title="Error:">
+		  <p>Incorrect placement and/or piece(s)</p>
+		</div>
+		<div style="width:100%">
+	  		<div id="showPass" style="width:45%;float: left; padding-top: 45px; margin-left: 6%; margin-bottom:20px">
+	  			<table id="gameboard">
+	  				<tr>
+	  					<td><div class="tile" id='r1c1' style='background-color:black'></div></td>
+	  					<td><div class="tile" id='r1c2'></div></td>
+	  					<td><div class="tile" id='r1c3' style='background-color:black'></div></td>
+	  					<td><div class="tile" id='r1c4'></div></td>
+	  				</tr>
+	  				<tr>
+	  					<td><div class="tile" id='r2c1'></div></td>
+	  					<td><div class="tile" id='r2c2' style='background-color:black'></div></td>
+	  					<td><div class="tile" id='r2c3'></div></td>
+	  					<td><div class="tile" id='r2c4' style='background-color:black'></div></td>
+	  				</tr>
+	  				<tr>
+	  					<td><div class="tile" id='r3c1' style='background-color:black'></div></td>
+	  					<td><div class="tile" id='r3c2'></div></td>
+	  					<td><div class="tile" id='r3c3' style='background-color:black'></div></td>
+	  					<td><div class="tile" id='r3c4'></div></td>
+	  				</tr>
+	  				<tr>
+	  					<td><div class="tile" id='r4c1'></div></td>
+	  					<td><div class="tile" id='r4c2' style='background-color:black'></div></td>
+	  					<td><div class="tile" id='r4c3'></div></td>
+	  					<td><div class="tile" id='r4c4' style='background-color:black'></div></td>
+	  				</tr>
+	  			</table>
+	    	</div>
+			<div id='confirmPass' style="margin-left: 10%; padding-top: 30px">
+	    	</div>
+    	</div>
+		<div style='padding-top: 20px'>
+			<button id="clearbutton" type="button" onclick="ResetTable()" style="margin-left: 35%">Clear</button>
+			<button id="confirmbutton" type="button" onclick="confirmUserChoice()">Confirm</button>
+	    </div>
+	    <div style='padding-top: 20px'>
+	    	<button id="downloadbtn" type="button" onclick="dwnLog()" style="margin-left: 35%">Save Log</button>
+	    	<button id="newbtn" type="button" onclick="newPasswords()">New Passwords</button>
+	    </div>
+		</body>
+</html>

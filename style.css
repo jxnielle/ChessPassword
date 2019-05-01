@@ -1,0 +1,77 @@
+/*
+	Style Sheet 
+*/
+body {
+	background-color: lightcoral;
+}
+
+h2{
+  display: inline;
+}
+
+.titlebar{
+  width: 100%;
+  border-radius:10px;
+  font-weight: bold;
+  font-size: 24px;
+  font-family: sans-serif;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+
+}
+
+#confirmPass{
+  font-family: sans-serif;
+  color: black;
+}
+
+#gameboard{
+  border:4px solid white;
+	border-radius:10px;
+}
+
+#confirmboard{
+  border:4px solid white;
+	border-radius:10px;
+  margin-bottom: 20px;
+}
+
+div.tile{
+	background-color: white;
+	width:100px;
+	height:100px;
+	vertical-align:top;
+}
+
+div.ctile{
+	padding-top: 20px;
+	padding-left: 20px;
+	background-color: white;
+	width:100px;
+	height:100px;
+	vertical-align:top;
+}
+
+#piecesBox{
+  border:4px solid white;
+  border-radius:10px;
+  width: 920px;
+  margin-left: 10%;
+}
+
+button{
+	font-size: 15px;
+	color: white;
+	background-color: crimson;
+	border:1px solid white;
+	border-radius:10px;
+	padding:10px;
+	width:100px;
+	height:50px;
+}
+
+img.imgs, img.boximgs {
+	width:75px;
+	height:75px;
+}
+
